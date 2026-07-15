@@ -1,0 +1,209 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  ADMIN
+  HRD
+  DIREKSI
+  FINANCE_SALES
+  AE
+  VIEWER
+}
+
+enum KategoriSurat {
+  INTERNAL
+  KOMERSIAL
+  EDARAN
+}
+
+enum StatusSurat {
+  GENERATING
+  VALID
+  VOID
+  FAILED
+}
+
+enum PenerimaTipe {
+  KARYAWAN
+  KLIEN
+  MANUAL
+}
+
+model User {
+  id           String   @id @default(cuid())
+  namaLengkap  String
+  email        String   @unique
+  passwordHash String
+  role         Role
+  divisiId     String?
+  divisi       Divisi?  @relation(fields: [divisiId], references: [id])
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  suratDibuat LogSurat[] @relation("CreatedBy")
+  suratDivoid LogSurat[] @relation("VoidedBy")
+}
+
+model Divisi {
+  id       String         @id @default(cuid())
+  kode     String         @unique // HRD, MKT (Marketing & Sales), CRE (Creative), DGM (Digital Marketing)
+  nama     String
+  users    User[]
+  counters CounterSurat[]
+  logSurat LogSurat[]
+  karyawan MasterKaryawan[]
+}
+
+model JenisSurat {
+  id        String          @id @default(cuid())
+  kode      String          @unique // OL, SKK, SRP, SPHK, SKP, SE, SK, PKS, BA, ST
+  nama      String
+  kategori  KategoriSurat
+  isActive  Boolean         @default(true)
+  templates SuratTemplate[]
+  counters  CounterSurat[]
+  logSurat  LogSurat[]
+}
+
+model SuratTemplate {
+  id             String     @id @default(cuid())
+  jenisSuratId   String
+  jenisSurat     JenisSurat @relation(fields: [jenisSuratId], references: [id])
+  versi          Int
+  namaTemplate   String
+  componentKey   String // key ke templateRegistry.ts, mis. "OL_v1"
+  formSchemaJson Json
+  isActive       Boolean    @default(true)
+  createdAt      DateTime   @default(now())
+  logSurat       LogSurat[]
+
+  @@unique([jenisSuratId, versi])
+}
+
+model MasterKaryawan {
+  id              String     @id @default(cuid())
+  namaLengkap     String
+  /// ID internal HR perusahaan (mis. "BDB040324006"), bukan NIK KTP.
+  idPersonalia    String?
+  nikKtp          String
+  jabatan         String
+  divisiId        String?
+  divisi          Divisi?    @relation(fields: [divisiId], references: [id])
+  alamat          String?
+  email           String?
+  telepon         String?
+  isActive        Boolean    @default(true)
+  createdAt       DateTime   @default(now())
+  sebagaiPenerima LogSurat[] @relation("PenerimaKaryawan")
+}
+
+model MasterKlien {
+  id              String     @id @default(cuid())
+  namaPerusahaan  String?
+  namaKontak      String
+  jenisKlien      String // INDIVIDU | PERUSAHAAN
+  alamat          String?
+  email           String?
+  telepon         String?
+  npwp            String?
+  isActive        Boolean    @default(true)
+  createdAt       DateTime   @default(now())
+  sebagaiPenerima LogSurat[] @relation("PenerimaKlien")
+}
+
+model Signatory {
+  id                String     @id @default(cuid())
+  nama              String
+  jabatan           String // Head of HRD, Finance Manager, CEO...
+  signatureImageUrl String
+  stampImageUrl     String?
+  isActive          Boolean    @default(true)
+  logSurat          LogSurat[]
+}
+
+// Satu row per (divisi, jenisSurat, tahun) - inti locking mechanism numbering engine
+model CounterSurat {
+  id           String     @id @default(cuid())
+  divisiId     String
+  divisi       Divisi     @relation(fields: [divisiId], references: [id])
+  jenisSuratId String
+  jenisSurat   JenisSurat @relation(fields: [jenisSuratId], references: [id])
+  tahun        Int
+  lastNumber   Int        @default(0)
+  updatedAt    DateTime   @updatedAt
+
+  @@unique([divisiId, jenisSuratId, tahun])
+}
+
+model LogSurat {
+  id             String @id @default(cuid())
+  nomorUrut      Int
+  nomorSuratFull String @unique
+  tahun          Int
+  bulanRomawi    String
+
+  divisiId     String
+  divisi       Divisi        @relation(fields: [divisiId], references: [id])
+  jenisSuratId String
+  jenisSurat   JenisSurat    @relation(fields: [jenisSuratId], references: [id])
+  templateId   String
+  template     SuratTemplate @relation(fields: [templateId], references: [id])
+
+  tanggalSurat       DateTime
+  penerimaTipe       PenerimaTipe
+  penerimaKaryawanId String?
+  penerimaKaryawan   MasterKaryawan? @relation("PenerimaKaryawan", fields: [penerimaKaryawanId], references: [id])
+  penerimaKlienId    String?
+  penerimaKlien      MasterKlien?    @relation("PenerimaKlien", fields: [penerimaKlienId], references: [id])
+  penerimaNamaManual String?
+
+  keterangan   String?
+  signatoryId  String
+  signatory    Signatory @relation(fields: [signatoryId], references: [id])
+  formDataJson Json
+
+  filePdfUrl String?
+  qrToken    String      @unique @default(cuid())
+  status     StatusSurat @default(GENERATING)
+
+  voidedAt    DateTime?
+  voidedById  String?
+  voidedBy    User?     @relation("VoidedBy", fields: [voidedById], references: [id])
+  voidReason  String?
+
+  revisiDariId String?
+  revisiDari   LogSurat?  @relation("Revisi", fields: [revisiDariId], references: [id])
+  revisiKe     LogSurat[] @relation("Revisi")
+
+  createdById String
+  createdBy   User     @relation("CreatedBy", fields: [createdById], references: [id])
+  createdAt   DateTime @default(now())
+
+  emailLogs EmailLog[]
+
+  @@index([tanggalSurat])
+  @@index([penerimaNamaManual])
+  @@index([status])
+}
+
+model EmailLog {
+  id                String   @id @default(cuid())
+  logSuratId        String
+  logSurat          LogSurat @relation(fields: [logSuratId], references: [id])
+  recipientEmail    String
+  status            String // SENT | FAILED
+  providerMessageId String?
+  errorMessage      String?
+  sentById          String
+  sentAt            DateTime @default(now())
+}

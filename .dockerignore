@@ -1,0 +1,12 @@
+node_modules
+.next
+.git
+storage
+.env
+.env.local
+.env.*.local
+_asset_backups
+tests
+coverage
+*.tsbuildinfo
+npm-debug.log*
