@@ -31,6 +31,19 @@ export function PerjanjianKerjaSamaTemplate({
 
   const hakKewajibanPertama = splitPoints(values.hakKewajibanPihakPertama);
   const hakKewajibanKedua = splitPoints(values.hakKewajibanPihakKedua);
+  const adaKetentuanApproval = Boolean(values.ketentuanApproval?.trim());
+
+  // Nomor pasal dihitung berjalan (bukan hardcode) supaya urutannya tetap
+  // benar walau PASAL NILAI KERJA SAMA / KETENTUAN APPROVAL sifatnya
+  // kondisional (cuma muncul kalau field terkait diisi).
+  let pasalKe = 0;
+  const pasalRuangLingkup = ++pasalKe;
+  const pasalApproval = adaKetentuanApproval ? ++pasalKe : null;
+  const pasalJangkaWaktu = ++pasalKe;
+  const pasalNilai = nilaiKerjaSama !== null ? ++pasalKe : null;
+  const pasalHakPertama = ++pasalKe;
+  const pasalHakKedua = ++pasalKe;
+  const pasalLainLain = ++pasalKe;
 
   return (
     <LetterheadLayout>
@@ -63,10 +76,17 @@ export function PerjanjianKerjaSamaTemplate({
         ketentuan sebagai berikut:
       </p>
 
-      <p className="mt-3 text-center font-semibold">PASAL 1 — RUANG LINGKUP KERJA SAMA</p>
+      <p className="mt-3 text-center font-semibold">PASAL {pasalRuangLingkup} — RUANG LINGKUP KERJA SAMA</p>
       <p className="whitespace-pre-wrap">{values.ruangLingkupKerjaSama || "-"}</p>
 
-      <p className="mt-3 text-center font-semibold">PASAL 2 — JANGKA WAKTU</p>
+      {adaKetentuanApproval && (
+        <>
+          <p className="mt-3 text-center font-semibold">PASAL {pasalApproval} — KETENTUAN APPROVAL/PERSETUJUAN</p>
+          <p className="whitespace-pre-wrap">{values.ketentuanApproval}</p>
+        </>
+      )}
+
+      <p className="mt-3 text-center font-semibold">PASAL {pasalJangkaWaktu} — JANGKA WAKTU</p>
       <ol className="list-decimal space-y-1 pl-6">
         <li>
           Perjanjian ini berlaku untuk jangka waktu {jangkaWaktuBulan} bulan, terhitung sejak tanggal{" "}
@@ -81,7 +101,7 @@ export function PerjanjianKerjaSamaTemplate({
 
       {nilaiKerjaSama !== null && (
         <>
-          <p className="mt-3 text-center font-semibold">PASAL 3 — NILAI KERJA SAMA</p>
+          <p className="mt-3 text-center font-semibold">PASAL {pasalNilai} — NILAI KERJA SAMA</p>
           <p>
             Nilai total kerja sama ini disepakati sebesar <strong>{formatRupiah(nilaiKerjaSama)}</strong>,
             dengan mekanisme pembayaran sesuai kesepakatan tertulis tambahan antara kedua belah pihak.
@@ -89,7 +109,7 @@ export function PerjanjianKerjaSamaTemplate({
         </>
       )}
 
-      <p className="mt-3 text-center font-semibold">PASAL {nilaiKerjaSama !== null ? "4" : "3"} — HAK DAN KEWAJIBAN PIHAK PERTAMA</p>
+      <p className="mt-3 text-center font-semibold">PASAL {pasalHakPertama} — HAK DAN KEWAJIBAN PIHAK PERTAMA</p>
       {hakKewajibanPertama.length > 0 ? (
         <ol className="list-decimal space-y-1 pl-6">
           {hakKewajibanPertama.map((point, idx) => (
@@ -100,7 +120,7 @@ export function PerjanjianKerjaSamaTemplate({
         <p>-</p>
       )}
 
-      <p className="mt-3 text-center font-semibold">PASAL {nilaiKerjaSama !== null ? "5" : "4"} — HAK DAN KEWAJIBAN PIHAK KEDUA</p>
+      <p className="mt-3 text-center font-semibold">PASAL {pasalHakKedua} — HAK DAN KEWAJIBAN PIHAK KEDUA</p>
       {hakKewajibanKedua.length > 0 ? (
         <ol className="list-decimal space-y-1 pl-6">
           {hakKewajibanKedua.map((point, idx) => (
@@ -111,7 +131,7 @@ export function PerjanjianKerjaSamaTemplate({
         <p>-</p>
       )}
 
-      <p className="mt-3 text-center font-semibold">PASAL {nilaiKerjaSama !== null ? "6" : "5"} — LAIN-LAIN</p>
+      <p className="mt-3 text-center font-semibold">PASAL {pasalLainLain} — LAIN-LAIN</p>
       <ol className="list-decimal space-y-1 pl-6">
         <li>
           Hal-hal yang belum diatur dalam perjanjian ini akan diatur lebih lanjut berdasarkan

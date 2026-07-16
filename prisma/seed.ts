@@ -291,6 +291,12 @@ const SURAT_TEMPLATES: {
       { key: "alamatPerusahaanKedua", label: "Alamat Pihak Kedua", type: "textarea", required: true },
       { key: "diwakiliJabatanKedua", label: "Jabatan Wakil Pihak Kedua", type: "text", required: true },
       { key: "ruangLingkupKerjaSama", label: "Ruang Lingkup Kerja Sama", type: "textarea", required: true },
+      {
+        key: "ketentuanApproval",
+        label: "Ketentuan Approval/Persetujuan (opsional, mis. siapa yang berwenang approve, batas waktu approval, approval untuk apa saja)",
+        type: "textarea",
+        required: false,
+      },
       { key: "tanggalMulaiKerjaSama", label: "Tanggal Mulai Kerja Sama", type: "date", required: true },
       { key: "jangkaWaktuBulan", label: "Jangka Waktu (bulan)", type: "currency", required: true },
       { key: "nilaiKerjaSama", label: "Nilai Kerja Sama (opsional)", type: "currency", required: false },
