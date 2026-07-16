@@ -10,7 +10,11 @@ export type FieldType =
   | "clientRef"
   | "signatoryRef"
   /** Daftar poin dinamis (bisa tambah/hapus baris) - disimpan sebagai string gabungan dipisah "\n". */
-  | "textList";
+  | "textList"
+  /** Daftar pasal dinamis (judul + isi, bisa tambah/hapus) - disimpan sebagai
+   * satu string JSON: [{judul, isi}, ...]. Dipakai untuk pasal tambahan yang
+   * beda-beda tiap surat (mis. ketentuan khusus per jenis layanan di PKS). */
+  | "pasalList";
 
 export type FieldDef = {
   key: string;

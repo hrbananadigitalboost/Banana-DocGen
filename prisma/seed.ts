@@ -312,6 +312,12 @@ const SURAT_TEMPLATES: {
         type: "textList",
         required: false,
       },
+      {
+        key: "pasalTambahan",
+        label: "Pasal Tambahan (opsional - ketentuan khusus sesuai jenis layanan)",
+        type: "pasalList",
+        required: false,
+      },
       { key: "signatoryId", label: "Ditandatangani Oleh", type: "signatoryRef", required: true },
     ],
   },

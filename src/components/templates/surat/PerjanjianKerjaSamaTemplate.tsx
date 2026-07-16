@@ -11,6 +11,24 @@ function splitPoints(raw: string | undefined): string[] {
     .filter((s) => s.length > 0);
 }
 
+type PasalTambahan = { judul: string; isi: string };
+
+/** Parse field type "pasalList" (JSON string [{judul,isi}, ...]) - lihat
+ * DynamicFormRenderer.tsx untuk bagaimana ini diisi dari form. */
+function parsePasalTambahan(raw: string | undefined): PasalTambahan[] {
+  if (!raw) return [];
+  try {
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter(
+      (p): p is PasalTambahan =>
+        p && typeof p.judul === "string" && typeof p.isi === "string" && (p.judul.trim() || p.isi.trim())
+    );
+  } catch {
+    return [];
+  }
+}
+
 export function PerjanjianKerjaSamaTemplate({
   nomorSuratFull,
   tanggalSurat,
@@ -32,10 +50,11 @@ export function PerjanjianKerjaSamaTemplate({
   const hakKewajibanPertama = splitPoints(values.hakKewajibanPihakPertama);
   const hakKewajibanKedua = splitPoints(values.hakKewajibanPihakKedua);
   const adaKetentuanApproval = Boolean(values.ketentuanApproval?.trim());
+  const pasalTambahanList = parsePasalTambahan(values.pasalTambahan);
 
   // Nomor pasal dihitung berjalan (bukan hardcode) supaya urutannya tetap
-  // benar walau PASAL NILAI KERJA SAMA / KETENTUAN APPROVAL sifatnya
-  // kondisional (cuma muncul kalau field terkait diisi).
+  // benar walau PASAL NILAI KERJA SAMA / KETENTUAN APPROVAL / pasal tambahan
+  // sifatnya kondisional (cuma muncul kalau field terkait diisi).
   let pasalKe = 0;
   const pasalRuangLingkup = ++pasalKe;
   const pasalApproval = adaKetentuanApproval ? ++pasalKe : null;
@@ -43,6 +62,7 @@ export function PerjanjianKerjaSamaTemplate({
   const pasalNilai = nilaiKerjaSama !== null ? ++pasalKe : null;
   const pasalHakPertama = ++pasalKe;
   const pasalHakKedua = ++pasalKe;
+  const pasalTambahanNumbers = pasalTambahanList.map(() => ++pasalKe);
   const pasalLainLain = ++pasalKe;
 
   return (
@@ -130,6 +150,15 @@ export function PerjanjianKerjaSamaTemplate({
       ) : (
         <p>-</p>
       )}
+
+      {pasalTambahanList.map((pasal, idx) => (
+        <div key={idx}>
+          <p className="mt-3 text-center font-semibold">
+            PASAL {pasalTambahanNumbers[idx]} — {pasal.judul.toUpperCase()}
+          </p>
+          <p className="whitespace-pre-wrap">{pasal.isi}</p>
+        </div>
+      ))}
 
       <p className="mt-3 text-center font-semibold">PASAL {pasalLainLain} — LAIN-LAIN</p>
       <ol className="list-decimal space-y-1 pl-6">
