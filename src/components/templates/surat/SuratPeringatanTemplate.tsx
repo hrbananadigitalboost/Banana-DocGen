@@ -83,7 +83,7 @@ export function SuratPeringatanTemplate({
         </p>
 
         <p className="mt-2">Maksud dan Tujuan:</p>
-        <p>{values.maksudTujuan || "-"}</p>
+        <p className="whitespace-pre-wrap">{values.maksudTujuan || "-"}</p>
       </LetterheadLayout>
 
       <LetterheadLayout pageBreakBefore>

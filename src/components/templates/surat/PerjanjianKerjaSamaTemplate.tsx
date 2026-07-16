@@ -64,7 +64,7 @@ export function PerjanjianKerjaSamaTemplate({
       </p>
 
       <p className="mt-3 text-center font-semibold">PASAL 1 — RUANG LINGKUP KERJA SAMA</p>
-      <p>{values.ruangLingkupKerjaSama || "-"}</p>
+      <p className="whitespace-pre-wrap">{values.ruangLingkupKerjaSama || "-"}</p>
 
       <p className="mt-3 text-center font-semibold">PASAL 2 — JANGKA WAKTU</p>
       <ol className="list-decimal space-y-1 pl-6">
