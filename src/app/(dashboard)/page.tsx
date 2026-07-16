@@ -180,6 +180,11 @@ export default async function DashboardHome({
                           Unduh
                         </a>
                       )}
+                      {log.filePdfUrl && (
+                        <a href={`/api/surat/${log.id}/download-docx`} className="text-slate-700 hover:underline">
+                          Unduh Word
+                        </a>
+                      )}
                       {canAct && (
                         <>
                           <Link href={`/surat/${log.id}/edit`} className="text-slate-700 hover:underline">
