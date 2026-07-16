@@ -4,6 +4,7 @@ import { auth } from "@/lib/auth/auth";
 import { prisma } from "@/lib/prisma";
 import { isSystemAdmin } from "@/lib/rbac/permissions";
 import { toggleUserActive } from "./actions";
+import { DeleteUserButton } from "./DeleteUserButton";
 
 export default async function UsersPage() {
   const session = await auth();
@@ -57,20 +58,26 @@ export default async function UsersPage() {
                   </span>
                 </td>
                 <td className="px-4 py-2">
-                  <form
-                    action={async () => {
-                      "use server";
-                      await toggleUserActive(u.id, !u.isActive);
-                    }}
-                  >
-                    <button
-                      type="submit"
-                      disabled={u.id === session.user.id}
-                      className="text-slate-500 hover:underline disabled:cursor-not-allowed disabled:opacity-40"
+                  <div className="flex items-center gap-3">
+                    <Link href={`/pengaturan/users/${u.id}/edit`} className="text-slate-700 hover:underline">
+                      Edit
+                    </Link>
+                    <form
+                      action={async () => {
+                        "use server";
+                        await toggleUserActive(u.id, !u.isActive);
+                      }}
                     >
-                      {u.isActive ? "Nonaktifkan" : "Aktifkan"}
-                    </button>
-                  </form>
+                      <button
+                        type="submit"
+                        disabled={u.id === session.user.id}
+                        className="text-slate-500 hover:underline disabled:cursor-not-allowed disabled:opacity-40"
+                      >
+                        {u.isActive ? "Nonaktifkan" : "Aktifkan"}
+                      </button>
+                    </form>
+                    <DeleteUserButton userId={u.id} userName={u.namaLengkap} disabled={u.id === session.user.id} />
+                  </div>
                 </td>
               </tr>
             ))}

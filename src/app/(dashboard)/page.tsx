@@ -5,6 +5,7 @@ import { canManageKategori, isRestrictedToKomersial } from "@/lib/rbac/permissio
 import { KategoriSurat, type Prisma } from "@/generated/prisma/client";
 import { VoidButton } from "./VoidButton";
 import { EmailButton } from "./EmailButton";
+import { DeleteSuratButton } from "./DeleteSuratButton";
 
 type SearchParams = { q?: string; dari?: string; sampai?: string };
 
@@ -142,6 +143,9 @@ export default async function DashboardHome({
           <tbody>
             {logs.map((log) => {
               const canAct = canManageKategori(role, log.jenisSurat.kategori) && log.status === "VALID";
+              const canDelete =
+                canManageKategori(role, log.jenisSurat.kategori) &&
+                (log.status === "VOID" || log.status === "FAILED");
               return (
                 <tr key={log.id} className="border-b border-slate-100 last:border-0">
                   <td className="px-4 py-2 whitespace-nowrap">
@@ -181,6 +185,9 @@ export default async function DashboardHome({
                           />
                           <VoidButton logSuratId={log.id} nomorSuratFull={log.nomorSuratFull} />
                         </>
+                      )}
+                      {canDelete && (
+                        <DeleteSuratButton logSuratId={log.id} nomorSuratFull={log.nomorSuratFull} />
                       )}
                     </div>
                   </td>

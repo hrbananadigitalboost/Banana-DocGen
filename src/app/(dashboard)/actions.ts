@@ -46,6 +46,41 @@ export async function voidSurat(logSuratId: string, reason: string): Promise<Voi
   return { ok: true };
 }
 
+export type DeleteSuratResult = { ok: true } | { ok: false; error: string };
+
+/**
+ * Hard delete asli - satu-satunya di sistem ini untuk LogSurat, dan HANYA
+ * diizinkan untuk surat yang sudah VOID/FAILED (surat VALID harus di-void
+ * dulu). EmailLog milik surat ini ikut dihapus dalam transaksi yang sama
+ * (tidak berguna tanpa induknya) - kalau ada surat lain yang menjadikan ini
+ * revisiDari, field itu otomatis di-null-kan oleh Postgres (default
+ * referential action Prisma untuk relasi opsional), bukan error.
+ */
+export async function deleteSurat(logSuratId: string): Promise<DeleteSuratResult> {
+  const session = await auth();
+  if (!session?.user) return { ok: false, error: "Unauthorized" };
+
+  const log = await prisma.logSurat.findUnique({
+    where: { id: logSuratId },
+    include: { jenisSurat: true },
+  });
+  if (!log) return { ok: false, error: "Surat tidak ditemukan." };
+  if (log.status !== StatusSurat.VOID && log.status !== StatusSurat.FAILED) {
+    return { ok: false, error: "Hanya surat berstatus VOID atau FAILED yang bisa dihapus permanen." };
+  }
+  if (!canManageKategori(session.user.role, log.jenisSurat.kategori)) {
+    return { ok: false, error: "Anda tidak punya akses untuk menghapus surat kategori ini." };
+  }
+
+  await prisma.$transaction([
+    prisma.emailLog.deleteMany({ where: { logSuratId } }),
+    prisma.logSurat.delete({ where: { id: logSuratId } }),
+  ]);
+
+  revalidatePath("/");
+  return { ok: true };
+}
+
 export type SendSuratEmailResult = { ok: true } | { ok: false; error: string };
 
 export async function sendSuratEmailAction(
