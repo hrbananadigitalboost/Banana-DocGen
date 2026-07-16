@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { auth } from "@/lib/auth/auth";
 import { prisma } from "@/lib/prisma";
-import { canManageKategori } from "@/lib/rbac/permissions";
+import { canManageKategori, canViewSuratCreatedBy } from "@/lib/rbac/permissions";
 import { StatusSurat } from "@/generated/prisma/enums";
 import { readSuratPdf } from "@/lib/storage/fileStorage";
 import { sendSuratEmail } from "@/lib/email/sendSuratEmail";
@@ -22,7 +22,7 @@ export async function voidSurat(logSuratId: string, reason: string): Promise<Voi
 
   const log = await prisma.logSurat.findUnique({
     where: { id: logSuratId },
-    include: { jenisSurat: true },
+    include: { jenisSurat: true, createdBy: true },
   });
   if (!log) return { ok: false, error: "Surat tidak ditemukan." };
   if (log.status !== StatusSurat.VALID) {
@@ -30,6 +30,9 @@ export async function voidSurat(logSuratId: string, reason: string): Promise<Voi
   }
   if (!canManageKategori(session.user.role, log.jenisSurat.kategori)) {
     return { ok: false, error: "Anda tidak punya akses untuk void surat kategori ini." };
+  }
+  if (!canViewSuratCreatedBy(session.user.role, log.createdBy.role)) {
+    return { ok: false, error: "Anda tidak punya akses ke surat ini." };
   }
 
   await prisma.logSurat.update({
@@ -62,7 +65,7 @@ export async function deleteSurat(logSuratId: string): Promise<DeleteSuratResult
 
   const log = await prisma.logSurat.findUnique({
     where: { id: logSuratId },
-    include: { jenisSurat: true },
+    include: { jenisSurat: true, createdBy: true },
   });
   if (!log) return { ok: false, error: "Surat tidak ditemukan." };
   if (log.status !== StatusSurat.VOID && log.status !== StatusSurat.FAILED) {
@@ -70,6 +73,9 @@ export async function deleteSurat(logSuratId: string): Promise<DeleteSuratResult
   }
   if (!canManageKategori(session.user.role, log.jenisSurat.kategori)) {
     return { ok: false, error: "Anda tidak punya akses untuk menghapus surat kategori ini." };
+  }
+  if (!canViewSuratCreatedBy(session.user.role, log.createdBy.role)) {
+    return { ok: false, error: "Anda tidak punya akses ke surat ini." };
   }
 
   await prisma.$transaction([
@@ -92,7 +98,7 @@ export async function sendSuratEmailAction(
 
   const log = await prisma.logSurat.findUnique({
     where: { id: logSuratId },
-    include: { jenisSurat: true },
+    include: { jenisSurat: true, createdBy: true },
   });
   if (!log) return { ok: false, error: "Surat tidak ditemukan." };
   if (log.status !== StatusSurat.VALID || !log.filePdfUrl) {
@@ -100,6 +106,9 @@ export async function sendSuratEmailAction(
   }
   if (!canManageKategori(session.user.role, log.jenisSurat.kategori)) {
     return { ok: false, error: "Anda tidak punya akses untuk mengirim email surat kategori ini." };
+  }
+  if (!canViewSuratCreatedBy(session.user.role, log.createdBy.role)) {
+    return { ok: false, error: "Anda tidak punya akses ke surat ini." };
   }
 
   try {

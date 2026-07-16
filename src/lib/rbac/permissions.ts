@@ -3,6 +3,7 @@ import { KategoriSurat } from "@/generated/prisma/enums";
 
 const FULL_LETTER_ACCESS: Role[keyof Role][] = [Role.ADMIN, Role.HRD, Role.DIREKSI];
 const KOMERSIAL_ONLY_ROLES: Role[keyof Role][] = [Role.FINANCE_SALES, Role.AE];
+const FULL_SURAT_VISIBILITY_ROLES: Role[keyof Role][] = [Role.ADMIN, Role.DIREKSI, Role.VIEWER];
 
 /** Bisa membuat/void/edit surat berkategori tertentu. */
 export function canManageKategori(role: Role, kategori: KategoriSurat): boolean {
@@ -30,6 +31,24 @@ export function canViewKategori(role: Role, kategori: KategoriSurat): boolean {
 /** Dipakai untuk filter query log book/export - true kalau role ini hanya boleh lihat surat KOMERSIAL. */
 export function isRestrictedToKomersial(role: Role): boolean {
   return KOMERSIAL_ONLY_ROLES.includes(role);
+}
+
+/**
+ * Hirarki visibilitas BERDASARKAN PEMBUAT surat, independen dari kategori -
+ * surat cuma terlihat oleh role yang sama dengan pembuatnya (per-role, bukan
+ * per-orang), kecuali ADMIN/DIREKSI/VIEWER yang lihat semua. Mencegah mis.
+ * data gaji di Offering Letter buatan HRD terlihat oleh FINANCE_SALES/AE
+ * cuma karena kategorinya KOMERSIAL.
+ */
+export function canViewSuratCreatedBy(viewerRole: Role, creatorRole: Role): boolean {
+  if (FULL_SURAT_VISIBILITY_ROLES.includes(viewerRole)) return true;
+  return viewerRole === creatorRole;
+}
+
+/** Where-filter Prisma untuk query daftar surat (dashboard/export) - undefined = tanpa filter. */
+export function suratCreatorRoleFilter(role: Role): { role: Role } | undefined {
+  if (FULL_SURAT_VISIBILITY_ROLES.includes(role)) return undefined;
+  return { role };
 }
 
 /** Administrasi sistem: kelola User, Role, dan SuratTemplate. Hanya ADMIN. */

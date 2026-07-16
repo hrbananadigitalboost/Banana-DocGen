@@ -1,7 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 import { auth } from "@/lib/auth/auth";
 import { prisma } from "@/lib/prisma";
-import { canManageKategori } from "@/lib/rbac/permissions";
+import { canManageKategori, canViewSuratCreatedBy } from "@/lib/rbac/permissions";
 import { getSuratFormData } from "../../getSuratFormData";
 import { SuratBaruClient } from "../../baru/SuratBaruClient";
 
@@ -16,7 +16,7 @@ export default async function EditSuratPage({ params }: EditSuratPageProps) {
 
   const original = await prisma.logSurat.findUnique({
     where: { id },
-    include: { jenisSurat: true },
+    include: { jenisSurat: true, createdBy: true },
   });
   if (!original) notFound();
 
@@ -24,6 +24,13 @@ export default async function EditSuratPage({ params }: EditSuratPageProps) {
     redirect("/");
   }
   if (!canManageKategori(session.user.role, original.jenisSurat.kategori)) {
+    redirect("/");
+  }
+  // Halaman ini menampilkan ulang SELURUH form termasuk field sensitif (mis.
+  // gaji di Offering Letter) - cek hirarki visibilitas per-role pembuat,
+  // bukan cuma kategori, supaya tidak bisa diakses langsung lewat ID surat
+  // yang tidak seharusnya terlihat role ini.
+  if (!canViewSuratCreatedBy(session.user.role, original.createdBy.role)) {
     redirect("/");
   }
 

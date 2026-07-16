@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { auth } from "@/lib/auth/auth";
 import { prisma } from "@/lib/prisma";
-import { canManageKategori, isRestrictedToKomersial } from "@/lib/rbac/permissions";
+import { canManageKategori, isRestrictedToKomersial, suratCreatorRoleFilter } from "@/lib/rbac/permissions";
 import { KategoriSurat, type Prisma } from "@/generated/prisma/client";
 import { VoidButton } from "./VoidButton";
 import { EmailButton } from "./EmailButton";
@@ -23,9 +23,16 @@ export default async function DashboardHome({
   // melihat log lintas kategori (VIEWER = read-only, BUKAN dibatasi kategori -
   // lihat canViewKategori vs canManageKategori di permissions.ts).
   const kategoriFilter = isRestrictedToKomersial(role) ? KategoriSurat.KOMERSIAL : undefined;
+  // Hirarki visibilitas per-role: HRD cuma lihat surat buatan HRD, AE cuma
+  // buatan AE, dst (independen dari kategoriFilter di atas) - lihat
+  // src/lib/rbac/permissions.ts untuk alasan lengkap (mencegah data gaji di
+  // Offering Letter buatan HRD terlihat role lain cuma karena kategorinya
+  // KOMERSIAL).
+  const creatorRoleFilter = suratCreatorRoleFilter(role);
 
   const where: Prisma.LogSuratWhereInput = {
     ...(kategoriFilter && { jenisSurat: { kategori: kategoriFilter } }),
+    ...(creatorRoleFilter && { createdBy: creatorRoleFilter }),
     ...(params.q && {
       OR: [
         { nomorSuratFull: { contains: params.q, mode: "insensitive" } },

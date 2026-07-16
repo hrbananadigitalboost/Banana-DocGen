@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth/auth";
 import { prisma } from "@/lib/prisma";
 import { readSuratPdf } from "@/lib/storage/fileStorage";
-import { canViewKategori } from "@/lib/rbac/permissions";
+import { canViewSuratCreatedBy } from "@/lib/rbac/permissions";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -13,11 +13,14 @@ export async function GET(_request: Request, { params }: RouteContext) {
   }
 
   const { id } = await params;
-  const logSurat = await prisma.logSurat.findUnique({ where: { id }, include: { jenisSurat: true } });
+  const logSurat = await prisma.logSurat.findUnique({
+    where: { id },
+    include: { jenisSurat: true, createdBy: true },
+  });
   if (!logSurat || !logSurat.filePdfUrl) {
     return NextResponse.json({ error: "Surat tidak ditemukan" }, { status: 404 });
   }
-  if (!canViewKategori(session.user.role, logSurat.jenisSurat.kategori)) {
+  if (!canViewSuratCreatedBy(session.user.role, logSurat.createdBy.role)) {
     return NextResponse.json({ error: "Tidak punya akses ke surat ini." }, { status: 403 });
   }
 

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import ExcelJS from "exceljs";
 import { auth } from "@/lib/auth/auth";
 import { prisma } from "@/lib/prisma";
-import { isRestrictedToKomersial } from "@/lib/rbac/permissions";
+import { isRestrictedToKomersial, suratCreatorRoleFilter } from "@/lib/rbac/permissions";
 import { KategoriSurat, type Prisma } from "@/generated/prisma/client";
 
 export async function GET(request: Request) {
@@ -18,9 +18,11 @@ export async function GET(request: Request) {
 
   const role = session.user.role;
   const kategoriFilter = isRestrictedToKomersial(role) ? KategoriSurat.KOMERSIAL : undefined;
+  const creatorRoleFilter = suratCreatorRoleFilter(role);
 
   const where: Prisma.LogSuratWhereInput = {
     ...(kategoriFilter && { jenisSurat: { kategori: kategoriFilter } }),
+    ...(creatorRoleFilter && { createdBy: creatorRoleFilter }),
     ...(q && {
       OR: [
         { nomorSuratFull: { contains: q, mode: "insensitive" } },
