@@ -26,7 +26,7 @@ const DIVISI = [
 // FIN/PRO/MED/ACC/STR sengaja dipertahankan meski belum dipakai.
 const STALE_DIVISI_KODE: string[] = [];
 
-const JENIS_SURAT: { kode: string; nama: string; kategori: KategoriSurat }[] = [
+const JENIS_SURAT: { kode: string; nama: string; kategori: KategoriSurat; isActive?: boolean }[] = [
   { kode: "OL", nama: "Offering Letter", kategori: KategoriSurat.KOMERSIAL },
   { kode: "SKK", nama: "Kontrak Kerja", kategori: KategoriSurat.INTERNAL },
   { kode: "SRP", nama: "Surat Peringatan", kategori: KategoriSurat.INTERNAL },
@@ -39,8 +39,16 @@ const JENIS_SURAT: { kode: string; nama: string; kategori: KategoriSurat }[] = [
   { kode: "ST", nama: "Surat Tugas", kategori: KategoriSurat.INTERNAL },
   { kode: "NDA", nama: "Perjanjian Kerahasiaan (NDA)", kategori: KategoriSurat.KOMERSIAL },
   { kode: "SPN", nama: "Surat Penawaran Kerja Sama", kategori: KategoriSurat.KOMERSIAL },
-  { kode: "SPK", nama: "Surat Perintah Kerja", kategori: KategoriSurat.KOMERSIAL },
+  { kode: "SPRK", nama: "Surat Perintah Kerja", kategori: KategoriSurat.KOMERSIAL },
   { kode: "SPP", nama: "Surat Peringatan Pembayaran", kategori: KategoriSurat.KOMERSIAL },
+  // "SPK" dan "SU" di bawah ini SENGAJA isActive:false dan tidak punya
+  // SuratTemplate aktif - cuma placeholder untuk riwayat historis lama
+  // (lihat scripts/import-riwayat-lama.ts), belum ada form/komponen React
+  // untuk generate surat baru jenis ini. "SPK" dulu dipakai untuk "Surat
+  // Perintah Kerja" (sekarang kode "SPRK" di atas, belum pernah dipakai
+  // nyata) - dikembalikan ke makna aslinya di riwayat perusahaan.
+  { kode: "SPK", nama: "Surat Pengangkatan Karyawan", kategori: KategoriSurat.INTERNAL, isActive: false },
+  { kode: "SU", nama: "Surat Undangan", kategori: KategoriSurat.INTERNAL, isActive: false },
 ];
 
 // Data karyawan nyata dari "Rekap Seluruh Data Personalia (4).xlsx". nikKtp
@@ -376,10 +384,10 @@ const SURAT_TEMPLATES: {
     ],
   },
   {
-    jenisSuratKode: "SPK",
+    jenisSuratKode: "SPRK",
     versi: 1,
     namaTemplate: "Surat Perintah Kerja - Standar",
-    componentKey: "SPK_v1",
+    componentKey: "SPRK_v1",
     fields: [
       { key: "penerimaNamaManual", label: "Nama PIC Klien", type: "text", required: true },
       { key: "namaKlien", label: "Nama Klien/Perusahaan", type: "text", required: true },
@@ -438,7 +446,7 @@ async function main() {
   for (const j of JENIS_SURAT) {
     await prisma.jenisSurat.upsert({
       where: { kode: j.kode },
-      update: { nama: j.nama, kategori: j.kategori },
+      update: { nama: j.nama, kategori: j.kategori, isActive: j.isActive ?? true },
       create: j,
     });
   }

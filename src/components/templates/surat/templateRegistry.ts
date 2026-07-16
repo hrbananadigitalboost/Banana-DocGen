@@ -34,6 +34,10 @@ export const templateRegistry: Record<string, SuratTemplateComponent> = {
   ST_v1: SuratTugasTemplate,
   NDA_v1: PerjanjianKerahasiaanTemplate,
   SPN_v1: SuratPenawaranKerjaSamaTemplate,
-  SPK_v1: SuratPerintahKerjaTemplate,
+  // Kode "SPK" awalnya dipakai komponen ini, tapi dibebaskan kembali untuk
+  // makna aslinya di riwayat perusahaan ("Surat Pengangkatan Karyawan") -
+  // lihat prisma/seed.ts. Komponen ini (Surat Perintah Kerja / work order)
+  // pindah ke kode "SPRK", belum ada pemakaian nyata sebelum rename ini.
+  SPRK_v1: SuratPerintahKerjaTemplate,
   SPP_v1: SuratPeringatanPembayaranTemplate,
 };
